@@ -1,0 +1,290 @@
+#!/usr/bin/tcsh
+rm -f ~/X ~/O ~/I ~/A
+ln -s /dev/null ~/X
+ln -s ~/PA2/inventory ~/I
+ln -s ~/PA2/objects ~/O
+ln -s ~/PA2/obj ~/A
+
+alias nogo 'echo You cannot go that way.'
+alias nokey 'echo You do not have a key that can open this door.'
+alias bearout 'echo The bear is very annoyed that you would be so presumptuous as to try and walk right by it.  He tells you so by tearing your head off.; echo ; echo You are dead.; quit'
+alias shakepalm 'echo You begin to shake a tree, and notice a coconut begin to fall from the air. As you try to get your hand up to block it, you feel the impact as it lands on your head.; echo You are dead.; quit'
+alias shakebear 'echo As you go up to the bear, it removes your head and places it on the ground.; echo You are dead.; quit'
+alias quit 'echo You have scored 0 out of a possible 90 points.;exit'
+alias l 'mv 1 9 > & ~/X;see'
+alias see 'head -n`ls [1-9]` .d; mv 9 1 >& ~/X; itemAlerts; echo -n'
+alias itemAlerts 'ls ???* > & ~/X && ls ???* | cat -n | tr -d "0-9\t" | tr " " "*" | cat -n | tr "0-9" "e" | tr -d " \t" | cat -n | tr "0-9" "-" | tr -d "\t" | tr "*" " " | xargs fgrep ~/O/.alerts'
+alias i 'echo You currently have:;(cd ~/I; ls ???* > & ~/X && ls ???* | cat -n | tr -d "0-9\t" | tr " " "*" | cat -n | tr "0-9" "e" | tr -d " \t" | cat -n | tr "0-9" "-" | tr -d "\t" | tr "*" " " | xargs fgrep ~/I/.messages)'
+
+cd; set prompt = '>'; chmod 755 ~/PA2/start/e/e/ne/ne/ne ; chmod 755 ~/PA2/start/e/e/ne/ne/ne/n; rm -rf ~/PA2; tar -xvf PA1.tar > & ~/X; cd ~/PA2/start; l
+while ( 1 )
+	echo -n $prompt
+	set cmd = ( $< )
+	
+	if ( $#cmd == 0 ) then
+		continue
+	endif
+	
+	switch ( $cmd[1] )
+		case [nesw]:
+		case [ns][ew]:
+			# cd `pwd -P`/$cmd > & ~/X && ( see ) || ( nogo )
+			# ls $cmd > & ~/X
+			if ( $cmd[1] == se && -e bear ) then
+				bearout
+			else if ( -e $cmd[1] ) then
+				if ( -x $cmd[1] ) then
+					cd `pwd -P`/$cmd[1]
+					see
+				else
+					nokey
+				endif
+			else
+				nogo
+			endif
+			breaksw
+		case x :
+			if ( $#cmd == 1 ) then
+				echo You must supply an object.
+			else
+				if ( -e ~/O/$cmd[2] ) then
+					if ( -e $cmd[2] || -e ~/I/$cmd[2] ) then 
+						cat ~/O/$cmd[2]
+					else
+						echo "I don't see that here."
+					endif
+				else
+					echo "I don't know what that is."
+				endif
+			endif
+			breaksw
+		case get:
+		case take:
+			if ( $#cmd == 1 ) then
+				echo You must supply an object.
+				continue
+			endif
+			if ( $cmd[2] == all ) then
+				set list = ( `ls ???* > & ~/X && ls ???*` )
+				if ( $#list != 0 ) then
+					foreach obj ( `cat $list | sort | uniq` )
+						if ( `cat $obj` =~ [bfkls][^t]*[dtypl] ) then
+							set somethingget = 1
+							if ( `cat $obj` == bracelet ) then
+								mv bracelet emerald ~/I
+							else if ( `cat $obj` == board ) then
+								mv board card cpu ~/I
+							else if ( `cat $obj` == key ) then
+								mv key ~/I
+								chmod 755 ~/PA2/start/e/e/ne/ne/ne
+							else
+								mv `cat $obj` ~/I
+							endif
+							fgrep `cat ~/I/$obj` ~/I/.messages | tr -d "\n" 
+							echo : Taken.
+						endif
+					end
+				endif
+				if ( $?somethingget ) then
+					unset somethingget
+				else
+					echo Nothing to take.
+				endif
+			else
+				if ( -e ~/O/$cmd[2] ) then
+					if ( -e $cmd[2] ) then 
+						if ( `cat $cmd[2]` =~ [bfkls][^t]*[dtypl] ) then
+							echo Taken.
+							if ( `cat $cmd[2]` == bracelet ) then
+								mv bracelet emerald ~/I
+							else if ( `cat $cmd[2]` == board ) then
+								mv board card cpu ~/I
+							else if ( `cat $cmd[2]` == key ) then
+								mv key ~/I
+								chmod 755 ~/PA2/start/e/e/ne/ne/ne
+							else
+								mv `cat $cmd[2]` ~/I
+							endif
+						else
+							echo "You cannot take that."
+						endif
+					else
+						echo "I do not see that here."
+					endif
+				else
+					echo "I don't know what that is."
+				endif
+			endif
+			breaksw
+		case drop:
+		case throw:
+			if ( $#cmd == 1 ) then
+				echo You must supply an object.
+			else
+				if ( -e ~/O/$cmd[2] ) then
+					if ( -e ~/I/$cmd[2] ) then 
+						echo Done.
+						if ( $cmd[2] =~ *r*l* ) then
+							mv ~/I/*r*l* .
+						else if ( $cmd[2] =~ [bc]*[rp][du] ) then
+							mv ~/I/[bc]*[rp][du] .
+						else if ( $cmd[2] == key ) then
+							mv ~/I/key .
+							chmod 444 ~/PA2/start/e/e/ne/ne/ne
+						else if ( $cmd[2] == food && -e .key ) then
+							rm -f ~/I/food bear
+							mv .key key
+							echo "The bear takes the food and runs away with it. He left something behind."
+						else
+							mv ~/I/$cmd[2] .
+						endif
+					else
+						echo "You don't have that."
+					endif
+				else
+					echo "I don't know what that is."
+				endif
+			endif
+			breaksw
+		case quit :
+			echo
+			quit
+			breaksw
+		case climb :
+			if ( $#cmd == 1 ) then
+				echo You must supply an object.
+			else
+				if ( -e ~/O/$cmd[2] ) then
+					if ( -e $cmd[2] || -e ~/I/$cmd[2] ) then 
+						if ( $cmd[2] == tree || $cmd[2] == trees || $cmd[2] == palm ) then
+							echo "You manage to get about two feet up the tree and fall back down.  You notice that the tree is very unsteady."
+						else
+							echo "You can't climb that."
+						endif
+					else
+						echo "I don't see that here."
+					endif
+				else
+					echo "I don't know what that object is."
+				endif
+			endif
+			breaksw
+		case shake :
+			if ( $#cmd == 1 ) then
+				echo You must supply an object.
+			else
+				if ( -e ~/O/$cmd[2] ) then
+					if ( -e $cmd[2] || -e ~/I/$cmd[2] ) then 
+						if ( $cmd[2] == tree || $cmd[2] == trees || $cmd[2] == palm ) then
+							shakepalm
+						else if ( $cmd[2] == bear ) then
+							shakebear
+						else if ( -e ~/I/$cmd[2] ) then
+							echo -n "Shaking "
+							fgrep `cat ~/I/$cmd[2]` ~/I/.messages | tr "A-Z\n" "a-z "
+							echo "seems to have no effect."
+						else
+							echo "You don't have that."
+						endif
+					else
+						echo "I don't see that here."
+					endif
+				else
+					echo "I don't know what that is."
+				endif
+			endif
+			breaksw
+		case eat :
+			if ( $#cmd == 1 ) then
+				echo You must supply an object.
+			else
+				if ( -e ~/O/$cmd[2] ) then
+					if ( -e $cmd[2] || -e ~/I/$cmd[2] ) then 
+						if ( -e ~/I/$cmd[2] ) then
+							if ( $cmd[2] == food ) then
+								rm -f ~/I/food
+								echo "That tasted horrible."
+							else
+								echo -n "You forcefully shove " 
+								fgrep `cat ~/I/$cmd[2]` ~/I/.messages | tr "A-Z\n" "a-z "
+								echo "down your throat, and start choking."
+								echo 
+								echo "You are dead."
+								quit
+							endif
+						else
+							echo "You don't have that."
+						endif
+					else
+						echo "You don't have that."
+					endif
+				else
+					echo "I don't know what that is."
+				endif
+			endif
+			breaksw
+		case put :
+			if ( $#cmd == 1 ) then
+				echo "You must supply an object."
+			else if ( $#cmd == 2 || $#cmd == 3 ) then
+				if ( -e ~/O/$cmd[2] ) then
+					if ( -e ~/I/$cmd[2] ) then
+						echo "You must supply an indirect object."
+					else
+						echo "You don't have that."
+					endif
+				else
+					echo "I don't know what that object is."
+				endif
+			else
+				if ( -e ~/O/$cmd[2] && -e ~/O/$cmd[4] ) then
+					if ( -e ~/I/$cmd[2] ) then
+						if ( -e $cmd[4] || -e ~/I/$cmd[4] ) then
+							if ( $cmd[2] =~ [bc]*[rp][du] && $cmd[3] == in && $cmd[4] =~ [vc]*[ea]? ) then
+								rm -f ~/I/[bc]*[rp][du]
+								mv steady .steady
+								mv .flashing flashing
+								echo "As you put the CPU board in the computer, it immediately springs to life."
+								echo "The lights start flashing, and the fans seem to startup."
+							else
+								echo "I don't know how to combine those objects.  Perhaps you should just try dropping it."
+							endif
+						else
+							echo "That indirect object is not here."
+						endif
+					else
+						echo "You don't have that."
+					endif
+				else
+					echo "I don't know what that is."
+				endif
+			endif
+		breaksw
+		case dig :
+			if ( -e ~/I/shovel ) then
+				if ( -e .cpu ) then
+					mv .cpu cpu
+					mv .card card
+					mv .board board
+					echo "I think you found something."
+				else
+					echo "Digging here reveals nothing."
+				endif
+			else
+				echo "You have nothing with which to dig."
+			endif
+			breaksw
+		case l :
+			l
+			breaksw
+		case see :
+			see
+			breaksw
+		case i :
+			i
+			breaksw
+		default :
+			echo "I don't understand that."
+			breaksw
+	endsw
+end
